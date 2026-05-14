@@ -82,7 +82,7 @@ input, textarea, select { user-select: text; -webkit-user-select: text; }
 #summary-bar {
   background: var(--accent);
   padding: 14px 20px 16px;
-  display: grid; grid-template-columns: repeat(4,1fr);
+  display: grid; grid-template-columns: repeat(3,1fr);
   gap: 4px;
 }
 .sb-item { text-align: center; }
@@ -333,7 +333,6 @@ select.form-ctrl { background-image: url("data:image/svg+xml,%3Csvg xmlns='http:
     <div class="sb-item"><div class="sb-label">Entradas</div><div class="sb-value" id="sb-inc">R$ 0</div></div>
     <div class="sb-item"><div class="sb-label">Gastos</div><div class="sb-value" id="sb-exp">R$ 0</div></div>
     <div class="sb-item"><div class="sb-label">Saldo</div><div class="sb-value" id="sb-bal">R$ 0</div></div>
-    <div class="sb-item"><div class="sb-label">Acumulado</div><div class="sb-value" id="sb-acum" style="font-size:12px">R$ 0</div></div>
   </div>
   <div class="progress-strip">
     <div class="ps-labels"><span>Comprometido</span><span id="ps-pct">0%</span></div>
@@ -905,11 +904,7 @@ function updateSummary(){
   document.getElementById('ps-fill').style.width=pct+'%';
   document.getElementById('ps-fill').className='ps-fill'+(exp>inc?' danger':'');
   document.getElementById('ps-pct').textContent=Math.round(pct)+'%';
-  // Accumulated
-  const ck=selectedCycle();const{end:cycleEnd}=getCycleBounds(ck);
-  const acum=S.transactions.filter(t=>new Date(t.date+'T00:00:00')<=cycleEnd).reduce((s,t)=>t.type==='income'?s+t.amount:s-t.amount,0);
-  const acEl=document.getElementById('sb-acum');
-  if(acEl){acEl.textContent=fmtS(acum);acEl.style.color=acum>=0?'#a7f3d0':'#fca5a5';}
+
 }
 
 /* ── DASHBOARD ── */
@@ -1420,25 +1415,24 @@ function updateAccounts(){
   // Dashboard account cards
   const dashEl=document.getElementById('dash-acc-cards');
   if(dashEl){
-    if(S.accounts.length<=1 && S.accounts[0]?.id==='default'){
-      dashEl.innerHTML=''; // hide if only default
-    } else {
-      dashEl.innerHTML=S.accounts.map(a=>{
-        const acum=getAccumulatedBalance(a.id);
-        const txs=monthTxs(ck).filter(t=>(t.accountId||'default')===a.id);
-        const inc=txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-        const exp=txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-        const cycBal=inc-exp;
-        return `<div class="acc-card-m" style="border-color:${a.color}33" onclick="nav('accounts');selectAccountMobile('${a.id}')">
-          <div class="acc-card-top">
-            <div class="acc-icon" style="background:${a.color}22">${a.icon}</div>
+    dashEl.innerHTML=S.accounts.map(a=>{
+      const acum=getAccumulatedBalance(a.id);
+      const txs=monthTxs(ck).filter(t=>(t.accountId||'default')===a.id);
+      const inc=txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+      const exp=txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+      const cycBal=inc-exp;
+      return `<div class="acc-card-m" style="border-color:${a.color}33;border-width:1.5px" onclick="nav('accounts');selectAccountMobile('${a.id}')">
+        <div class="acc-card-top">
+          <div class="acc-icon" style="background:${a.color}22">${a.icon}</div>
+          <div>
             <div class="acc-name">${a.name}</div>
+            <div class="acc-sub">Ciclo: <span style="color:${cycBal>=0?'var(--green)':'var(--red)'};font-weight:600">${cycBal>=0?'+':''}${fmtS(cycBal)}</span></div>
           </div>
-          <div class="acc-acum" style="color:${acum>=0?a.color:'var(--red)'}">${fmtS(acum)}</div>
-          <div class="acc-sub">Ciclo: <span style="color:${cycBal>=0?'var(--green)':'var(--red)'}">${cycBal>=0?'+':''}${fmtS(cycBal)}</span></div>
-        </div>`;
-      }).join('');
-    }
+        </div>
+        <div class="acc-acum" style="color:${acum>=0?a.color:'var(--red)'}">${fmtS(acum)}</div>
+        <div class="acc-sub" style="margin-top:2px">Saldo acumulado</div>
+      </div>`;
+    }).join('');
   }
 
   // Accounts page summary
