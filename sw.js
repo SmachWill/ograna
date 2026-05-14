@@ -1,7 +1,6 @@
-const CACHE = 'ograna-v1';
+const CACHE = 'ograna-v2';
 const BASE  = '/ograna';
 const ASSETS = [
-  BASE + '/',
   BASE + '/index.html',
   BASE + '/manifest.json',
   BASE + '/icon-192.svg',
